@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "resultflow-whatsapp": {
+      "command": "node",
+      "args": [
+        "./mcp-server/index.js"
+      ],
+      "cwd": ".",
+      "env": {
+        "RESULTFLOW_API_BASE_URL": "https://wa.resultmarketing.asia"
+      }
+    }
+  }
+}

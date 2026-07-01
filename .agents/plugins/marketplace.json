@@ -1,0 +1,20 @@
+{
+  "name": "resultflow",
+  "interface": {
+    "displayName": "ResultFlow"
+  },
+  "plugins": [
+    {
+      "name": "resultflow-whatsapp",
+      "source": {
+        "source": "local",
+        "path": "./plugins/resultflow-whatsapp"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
