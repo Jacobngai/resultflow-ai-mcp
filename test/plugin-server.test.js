@@ -6,8 +6,27 @@ const test = require("node:test");
 
 const {
   localConnection,
+  redactSensitive,
   relayRemoteMessage,
 } = require("../plugins/resultflow-whatsapp/mcp-server/index");
+
+test("remote runtime identifiers and credentials are removed from tool results", () => {
+  assert.deepEqual(redactSensitive({
+    runtimeId: "rts_private",
+    nested: {
+      runtime_session_id: "rts_private_nested",
+      token: "private-token",
+      state: "connected",
+    },
+  }), {
+    runtimeId: "[redacted]",
+    nested: {
+      runtime_session_id: "[redacted]",
+      token: "[redacted]",
+      state: "connected",
+    },
+  });
+});
 
 test("installed plugin loads only the selected scoped MCP connection", (t) => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "resultflow-plugin-test-"));

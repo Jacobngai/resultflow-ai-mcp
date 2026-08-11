@@ -368,6 +368,9 @@ function redactSensitive(value) {
       lower.includes("password") ||
       lower.includes("authorization") ||
       lower === "qr" ||
+      lower === "runtimeid" ||
+      lower === "runtimesessionid" ||
+      lower === "runtime_session_id" ||
       lower.includes("authstate")
     ) {
       result[key] = "[redacted]";
@@ -528,6 +531,7 @@ if (require.main === module) runStdio();
 module.exports = {
   handleRequest,
   localConnection,
+  redactSensitive,
   relayRemoteMessage,
   runStdio,
   tools: tools.map(({ handler, ...tool }) => tool),
