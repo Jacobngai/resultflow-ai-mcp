@@ -1,15 +1,15 @@
 {
   "name": "resultflow-whatsapp",
-  "version": "0.1.0",
-  "description": "MCP tools for ResultFlow WhatsApp automation.",
+  "version": "0.2.0",
+  "description": "Workspace-scoped WhatsApp tools connected through ResultFlow.",
   "author": {
     "name": "Result Marketing"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "ResultFlow WhatsApp",
-    "shortDescription": "Operate ResultFlow WhatsApp automation from Codex.",
-    "longDescription": "Adds ResultFlow WhatsApp tools for instances, connection state, messages, chats, contacts, webhooks, and settings. The plugin exposes authenticated read, create, update, and delete operations for customer-owned workspaces.",
+    "shortDescription": "Use your connected WhatsApp securely from Codex.",
+    "longDescription": "Adds workspace-scoped tools for WhatsApp chats, messages, contacts, groups, connection state, and supported create, read, update, and delete actions. Connection uses the one-time setup prompt issued after ResultFlow onboarding.",
     "developerName": "Result Marketing",
     "category": "Productivity",
     "capabilities": [
@@ -18,9 +18,9 @@
       "Interactive"
     ],
     "defaultPrompt": [
-      "Send myself a WhatsApp update with ResultFlow.",
-      "Create a WhatsApp automation webhook.",
-      "Summarize today's WhatsApp activity with ResultFlow."
+      "Catch me up on today's WhatsApp chats.",
+      "Who still needs a reply on WhatsApp?",
+      "What did my WhatsApp groups approve?"
     ],
     "brandColor": "#16A34A"
   },

@@ -68,9 +68,12 @@ async function claimSetupCode(setupCode, clientId, claimUrl) {
 async function main() {
   const clientId = argument("client");
   const setupCode = argument("code");
-  const claimUrl = process.env.RESULTFLOW_CLAIM_URL || "https://resultflow.asia/api/integrations/setup-codes/claim";
+  const claimUrl = argument("claim-url") || process.env.RESULTFLOW_CLAIM_URL || "https://resultflow.asia/api/integrations/setup-codes/claim";
   if (!CLIENTS.has(clientId)) throw new Error("Choose codex, claude_code, gemini_cli, or deepseek_bridge.");
   if (!setupCode) throw new Error("A ResultFlow setup code is required.");
+  if (!/^https:\/\//i.test(claimUrl) && !/^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?\//i.test(claimUrl)) {
+    throw new Error("ResultFlow claim URL must use HTTPS.");
+  }
 
   const connection = await claimSetupCode(setupCode, clientId, claimUrl);
   saveClientConfig(clientId, {

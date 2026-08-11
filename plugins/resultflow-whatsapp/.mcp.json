@@ -7,7 +7,7 @@
       ],
       "cwd": ".",
       "env": {
-        "RESULTFLOW_API_BASE_URL": "https://wa.resultmarketing.asia"
+        "RESULTFLOW_AI_CLIENT": "codex"
       }
     }
   }

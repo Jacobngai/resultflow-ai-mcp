@@ -1,79 +1,23 @@
-# ResultFlow WhatsApp Codex Plugin
+# ResultFlow WhatsApp
 
-Codex plugin and MCP tools for ResultFlow WhatsApp automation.
+Workspace-scoped WhatsApp tools for Codex.
 
-## Install From A Git Marketplace
+## Customer setup
 
-The cross-client installer is the preferred customer path because it uses a scoped ResultFlow MCP credential:
+1. Complete ResultFlow checkout and scan the WhatsApp QR shown in onboarding.
+2. Press **Copy Codex prompt**.
+3. Paste and send that prompt in Codex.
 
-```bash
-npx -y github:Jacobngai/resultflow-ai-mcp connect --client codex --code RF_SETUP_REPLACE_ME
-```
+The prompt claims a short-lived setup code, stores a revocable MCP credential in the current user's `.resultflow` directory, and registers the ResultFlow relay. Customers do not paste API keys or edit MCP configuration.
 
-The operator-facing Codex marketplace can also be added directly:
+The plugin can also be installed from the ResultFlow Git marketplace for operator testing. Installing it does not grant WhatsApp access; a paid workspace setup prompt is still required.
 
-```bash
-codex plugin marketplace add https://github.com/Jacobngai/resultflow-ai-mcp.git
-codex plugin add resultflow-whatsapp@resultflow
-```
+## Available tools
 
-For local testing from this folder:
+The plugin exposes connection state, chats, messages, contacts, number checks, groups, text/media sending, read/archive actions, message edit/delete, group create/update/participant/leave/invite actions, presence, restart, and logout. Every call is bound server-side to the WhatsApp session selected during setup.
 
-```bash
-codex plugin marketplace add .
-codex plugin add resultflow-whatsapp@resultflow
-```
+There is no caller-controlled workspace, runtime ID, service token, or ResultFlow confirmation flag. Provider permissions and WhatsApp behavior still apply.
 
-Start a new Codex thread after installation so Codex loads the plugin tools.
+## Product support
 
-## Configuration
-
-The plugin defaults to:
-
-- API base URL: `https://wa.resultmarketing.asia`
-- Manager URL: `https://wa.resultmarketing.asia/manager`
-
-Each MCP tool accepts `apiKey` for the current request. For recurring automations, set these optional environment variables in the MCP config or host environment:
-
-- `RESULTFLOW_API_KEY`
-- `RESULTFLOW_API_DEFAULT_INSTANCE`
-- `RESULTFLOW_API_DEFAULT_RECIPIENT`
-- `RESULTFLOW_API_TIMEOUT_MS`
-- `RESULTFLOW_API_DRY_RUN`
-
-Do not save API keys in this repository or plugin source.
-
-## Main Tools
-
-- `resultflow_status`
-- `resultflow_list_instances`
-- `resultflow_create_instance`
-- `resultflow_connect_instance`
-- `resultflow_get_connection_state`
-- `resultflow_restart_instance`
-- `resultflow_logout_instance`
-- `resultflow_delete_instance`
-- `resultflow_set_presence`
-- `resultflow_send_text`
-- `resultflow_send_media`
-- `resultflow_check_whatsapp_numbers`
-- `resultflow_find_contacts`
-- `resultflow_find_chats`
-- `resultflow_find_messages`
-- `resultflow_mark_messages_read`
-- `resultflow_archive_chat`
-- `resultflow_delete_message_for_everyone`
-- `resultflow_get_webhook`
-- `resultflow_set_webhook`
-- `resultflow_get_settings`
-- `resultflow_set_settings`
-
-## Website Fallback Messages
-
-If Codex is not installed:
-
-> ResultFlow for Codex runs inside the Codex app or CLI. Install Codex first, sign in, then run the marketplace install command. ResultFlow will not access your WhatsApp workspace until you provide your API key or configure credentials.
-
-If the plugin is not installed:
-
-> ResultFlow WhatsApp is not installed in Codex yet. Add the ResultFlow marketplace, install `resultflow-whatsapp`, then start a new Codex thread.
+The current published setup path supports Codex, Claude Code, Gemini CLI, and the ResultFlow DeepSeek bridge. ChatGPT Work requires the separate public remote-plugin OAuth integration and must not be presented as generally available until that validation is complete.
