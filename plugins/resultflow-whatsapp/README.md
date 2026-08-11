@@ -4,10 +4,16 @@ Codex plugin and MCP tools for ResultFlow WhatsApp automation.
 
 ## Install From A Git Marketplace
 
-After this folder is pushed to a Git repository, users can add the marketplace:
+The cross-client installer is the preferred customer path because it uses a scoped ResultFlow MCP credential:
 
 ```bash
-codex plugin marketplace add https://github.com/resultflow/codex-marketplace.git
+npx -y github:Jacobngai/resultflow-ai-mcp connect --client codex --code RF_SETUP_REPLACE_ME
+```
+
+The operator-facing Codex marketplace can also be added directly:
+
+```bash
+codex plugin marketplace add https://github.com/Jacobngai/resultflow-ai-mcp.git
 codex plugin add resultflow-whatsapp@resultflow
 ```
 

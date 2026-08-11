@@ -158,7 +158,7 @@ const tools = [
         },
         qrcode: {
           type: "boolean",
-          description: "Ask ResultFlow WhatsApp API to generate a QR code after creation.",
+          description: "Ask ResultFlow WhatsApp API to generate an RFQR code after creation.",
         },
         number: {
           type: "string",
@@ -187,7 +187,7 @@ const tools = [
   {
     name: "resultflow_connect_instance",
     description:
-      "Generate connection QR/pairing data for a ResultFlow instance.",
+      "Generate connection RFQR/pairing data for a ResultFlow instance.",
     inputSchema: withInstance({
       number: {
         type: "string",
@@ -551,6 +551,8 @@ function getConfig(args = {}, requireApiKey = true) {
     defaultRecipient: firstNonEmpty(args.number, process.env.RESULTFLOW_API_DEFAULT_RECIPIENT),
     timeoutMs,
     dryRunDefault,
+    entitlementUrl: firstNonEmpty(process.env.RESULTFLOW_ENTITLEMENT_URL, 'https://resultflow.asia/api/workspaces/status'),
+    workspaceToken: firstNonEmpty(process.env.RESULTFLOW_WORKSPACE_TOKEN),
   };
 }
 
@@ -633,6 +635,7 @@ function resolveDryRun(args, config) {
 
 async function callResultFlow(args, request) {
   const config = getConfig(args, true);
+  await assertActiveEntitlement(config);
   const method = request.method.toUpperCase();
   const query = request.query || {};
   const url = new URL(`${config.baseUrl}${request.path}`);
@@ -688,6 +691,28 @@ async function callResultFlow(args, request) {
     if (error.name === "AbortError") {
       throw userError(`ResultFlow WhatsApp API request timed out after ${config.timeoutMs} ms.`);
     }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function assertActiveEntitlement(config) {
+  if (!config.workspaceToken) return { configured: false };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
+  try {
+    const response = await fetch(config.entitlementUrl, {
+      headers: { Authorization: `Bearer ${config.workspaceToken}` },
+      signal: controller.signal,
+    });
+    const data = parseJsonOrText(await response.text());
+    if (!response.ok || !data || data.access_allowed !== true) {
+      throw userError('ResultFlow access is not active. Billing may be refunded, disputed, suspended, or cancelled.');
+    }
+    return { configured: true, active: true, workspaceId: data.workspace && data.workspace.id };
+  } catch (error) {
+    if (error.name === 'AbortError') throw userError('ResultFlow entitlement check timed out.');
     throw error;
   } finally {
     clearTimeout(timeout);
@@ -768,6 +793,7 @@ async function toolStatus(args) {
     managerUrl: `${config.baseUrl}/manager`,
     hasApiKey: Boolean(config.apiKey),
     apiKeySource: config.apiKeySource,
+    entitlementConfigured: Boolean(config.workspaceToken),
     defaultInstanceConfigured: Boolean(process.env.RESULTFLOW_API_DEFAULT_INSTANCE),
     defaultRecipientConfigured: Boolean(process.env.RESULTFLOW_API_DEFAULT_RECIPIENT),
     dryRunDefault: config.dryRunDefault,
@@ -1194,13 +1220,13 @@ function serializeToolError(error) {
   };
 }
 
-async function handleRequest(message) {
+async function handleRequest(message, respond = send) {
   if (!message || typeof message !== "object") return;
 
   if (message.method === "notifications/initialized") return;
 
   if (message.method === "initialize") {
-    send({
+    respond({
       jsonrpc: "2.0",
       id: message.id,
       result: {
@@ -1218,12 +1244,12 @@ async function handleRequest(message) {
   }
 
   if (message.method === "ping") {
-    send({ jsonrpc: "2.0", id: message.id, result: {} });
+    respond({ jsonrpc: "2.0", id: message.id, result: {} });
     return;
   }
 
   if (message.method === "tools/list") {
-    send({
+    respond({
       jsonrpc: "2.0",
       id: message.id,
       result: {
@@ -1236,20 +1262,20 @@ async function handleRequest(message) {
   if (message.method === "tools/call") {
     const tool = toolMap.get(message.params?.name);
     if (!tool) {
-      sendError(message.id, -32602, `Unknown tool: ${message.params?.name}`);
+      respond(errorResponse(message.id, -32602, `Unknown tool: ${message.params?.name}`));
       return;
     }
 
     try {
       const args = message.params?.arguments || {};
       const result = await tool.handler(args);
-      send({
+      respond({
         jsonrpc: "2.0",
         id: message.id,
         result: serializeToolResult(result),
       });
     } catch (error) {
-      send({
+      respond({
         jsonrpc: "2.0",
         id: message.id,
         result: serializeToolError(error),
@@ -1259,7 +1285,7 @@ async function handleRequest(message) {
   }
 
   if (message.id !== undefined) {
-    sendError(message.id, -32601, `Method not found: ${message.method}`);
+    respond(errorResponse(message.id, -32601, `Method not found: ${message.method}`));
   }
 }
 
@@ -1267,45 +1293,55 @@ function send(payload) {
   process.stdout.write(`${JSON.stringify(payload)}\n`);
 }
 
-function sendError(id, code, message) {
-  send({
+function errorResponse(id, code, message) {
+  return {
     jsonrpc: "2.0",
     id,
     error: {
       code,
       message,
     },
+  };
+}
+
+function runStdio() {
+  let buffer = "";
+  process.stdin.setEncoding("utf8");
+  process.stdin.on("data", (chunk) => {
+    buffer += chunk;
+    let newlineIndex = buffer.indexOf("\n");
+    while (newlineIndex !== -1) {
+      const line = buffer.slice(0, newlineIndex).trim();
+      buffer = buffer.slice(newlineIndex + 1);
+      newlineIndex = buffer.indexOf("\n");
+      if (!line) continue;
+
+      let message;
+      try {
+        message = JSON.parse(line);
+      } catch (error) {
+        send(errorResponse(null, -32700, "Parse error"));
+        continue;
+      }
+
+      handleRequest(message).catch((error) => {
+        console.error(error);
+        if (message.id !== undefined) {
+          send(errorResponse(message.id, -32603, error.message || "Internal error"));
+        }
+      });
+    }
+  });
+
+  process.stdin.on("end", () => {
+    process.exit(0);
   });
 }
 
-let buffer = "";
-process.stdin.setEncoding("utf8");
-process.stdin.on("data", (chunk) => {
-  buffer += chunk;
-  let newlineIndex = buffer.indexOf("\n");
-  while (newlineIndex !== -1) {
-    const line = buffer.slice(0, newlineIndex).trim();
-    buffer = buffer.slice(newlineIndex + 1);
-    newlineIndex = buffer.indexOf("\n");
-    if (!line) continue;
+if (require.main === module) runStdio();
 
-    let message;
-    try {
-      message = JSON.parse(line);
-    } catch (error) {
-      sendError(null, -32700, "Parse error");
-      continue;
-    }
-
-    handleRequest(message).catch((error) => {
-      console.error(error);
-      if (message.id !== undefined) {
-        sendError(message.id, -32603, error.message || "Internal error");
-      }
-    });
-  }
-});
-
-process.stdin.on("end", () => {
-  process.exit(0);
-});
+module.exports = {
+  handleRequest,
+  runStdio,
+  tools: tools.map(({ handler, ...tool }) => tool),
+};
