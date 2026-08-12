@@ -68,12 +68,18 @@ const tools = [
     "Check the connected ResultFlow WhatsApp account and service status.",
     {},
     [],
-    async (_args, context) => ({
-      server: SERVER_NAME,
-      version: SERVER_VERSION,
-      ...(context && context.session ? { session: context.session } : {}),
-      runtime: await runtimeTool(context, "status", {}),
-    }),
+    async (_args, context) => {
+      const runtime = await runtimeTool(context, "status", {});
+      const session = context && context.session
+        ? { ...context.session, status: runtime.state || context.session.status }
+        : undefined;
+      return {
+        server: SERVER_NAME,
+        version: SERVER_VERSION,
+        ...(session ? { session } : {}),
+        runtime,
+      };
+    },
   ),
   definition(
     "resultflow_get_connection_state",
